@@ -1,4 +1,12 @@
 async function fetchOpenAI(messages) {
+  if (!process.env.OPENAI_API_KEY) {
+    throw {
+      status: 500,
+      title: 'Configuration Error',
+      description: 'OpenAI API key is not configured'
+    };
+  }
+
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -29,7 +37,7 @@ export async function generatePersonality(tweets) {
     const response = await fetchOpenAI([
       {
         role: 'system',
-        content: 'You are an expert at analyzing Twitter content and determining personality traits. List 4 key personality traits based on the tweet content provided.'
+        content: 'You are an expert at analyzing Twitter content and determining personality traits. List 4 key personality traits based on the tweet content provided. Format each trait as a single word or short phrase.'
       },
       {
         role: 'user',
@@ -40,10 +48,13 @@ export async function generatePersonality(tweets) {
     return response.choices[0].message.content
       .split('\n')
       .filter(Boolean)
-      .map(trait => trait.replace(/^\d+\.\s*/, '').trim())
+      .map(trait => trait.replace(/^\d+\.\s*/, '').trim().replace(/^["-\s]+|["-\s]+$/g, ''))
       .slice(0, 4);
   } catch (error) {
-    console.error('OpenAI API error:', error);
-    return ['Analytical', 'Innovative', 'Tech-focused', 'Forward-thinking'];
+    throw {
+      status: error.status || 500,
+      title: error.title || 'OpenAI API Error',
+      description: error.description || 'Failed to generate personality traits'
+    };
   }
 }
