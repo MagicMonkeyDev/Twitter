@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: twitter-ai-agent-api
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: TWITTER_API_KEY
+        sync: false
+      - key: TWITTER_API_SECRET
+        sync: false
+      - key: TWITTER_BEARER_TOKEN
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: CORS_ORIGIN
+        value: https://inspiring-longma-07e3a4.netlify.app
