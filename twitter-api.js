@@ -1,6 +1,7 @@
 const TWITTER_API_BASE = 'https://api.twitter.com/2';
 const TWITTER_API_VERSION = '2';
 const TWITTER_API_TIMEOUT = 15000; // 15 second timeout
+let permissionsValidated = false;
 
 const log = {
   info: (...args) => console.log(new Date().toISOString(), ...args),
@@ -52,7 +53,6 @@ const fetchWithAuth = async (endpoint) => {
   }
 
   // Validate permissions on first request
-  static let permissionsValidated = false;
   if (!permissionsValidated) {
     await validateApiPermissions(token);
     permissionsValidated = true;
