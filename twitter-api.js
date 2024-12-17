@@ -1,6 +1,6 @@
 const TWITTER_API_BASE = 'https://api.twitter.com/2';
 const TWITTER_API_VERSION = '2';
-const BEARER_TOKEN_REGEX = /^[A-Za-z0-9-._~+/%]+=*$/;
+const BEARER_TOKEN_REGEX = /^[A-Za-z0-9%._\-]+$/;
 
 const log = {
   info: (...args) => console.log(new Date().toISOString(), ...args),
@@ -10,20 +10,18 @@ const log = {
 function validateBearerToken(token) {
   if (!token) return false;
   const cleanToken = token.trim();
-  
-  // URL decode the token if it contains encoded characters
-  const decodedToken = decodeURIComponent(cleanToken);
-  
-  // Extract token value without 'Bearer ' prefix
-  const tokenValue = decodedToken.startsWith('Bearer ') ? decodedToken.substring(7).trim() : decodedToken;
-  
-  // Validate token format and length
-  return tokenValue.length >= 50 && BEARER_TOKEN_REGEX.test(tokenValue);
+
+  // Remove 'Bearer ' prefix if present
+  const tokenValue = cleanToken.startsWith('Bearer ') 
+    ? cleanToken.substring(7).trim() 
+    : cleanToken;
+
+  return tokenValue.length > 0 && BEARER_TOKEN_REGEX.test(tokenValue);
 }
 
 async function fetchWithAuth(endpoint) {
   let token = process.env.TWITTER_BEARER_TOKEN;
-  
+
   if (!validateBearerToken(token)) {
     log.error('Invalid Twitter Bearer Token format');
     throw {
@@ -32,9 +30,6 @@ async function fetchWithAuth(endpoint) {
       description: 'Invalid Twitter API Bearer Token format'
     };
   }
-
-  // Decode the token if it contains URL-encoded characters
-  token = decodeURIComponent(token.trim());
 
   // Ensure token has 'Bearer ' prefix
   const authToken = token.trim().startsWith('Bearer ')
