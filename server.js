@@ -8,11 +8,6 @@ import { generatePersonality } from './openai-api.js';
 // Load environment variables
 dotenv.config();
 
-// Ensure Bearer token is properly formatted
-if (process.env.TWITTER_BEARER_TOKEN && !process.env.TWITTER_BEARER_TOKEN.startsWith('Bearer ')) {
-  process.env.TWITTER_BEARER_TOKEN = `Bearer ${process.env.TWITTER_BEARER_TOKEN}`;
-}
-
 // Initialize Express app early to catch startup errors
 const app = express();
 const port = process.env.PORT || 3000;

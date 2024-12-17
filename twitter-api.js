@@ -1,24 +1,20 @@
 const TWITTER_API_BASE = 'https://api.twitter.com/2';
 
-// Helper function to validate bearer token format
-function validateBearerToken(token) {
-  return token && typeof token === 'string' && token.startsWith('Bearer ');
-}
-
 const log = {
   info: (...args) => console.log(new Date().toISOString(), ...args),
   error: (...args) => console.error(new Date().toISOString(), ...args)
 };
 
 const fetchWithAuth = async (endpoint) => {
-  const token = process.env.TWITTER_BEARER_TOKEN;
+  let token = process.env.TWITTER_BEARER_TOKEN;
   
   if (!token) {
     throw new Error('Twitter Bearer Token is not configured');
   }
 
-  // Ensure token has 'Bearer ' prefix
-  const bearerToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+  // Remove any 'Bearer ' prefix if it exists and add it back properly
+  token = token.replace(/^Bearer\s+/i, '');
+  const bearerToken = `Bearer ${token}`;
 
   // Log request details (without sensitive data)
   log.info(`Making Twitter API request to: ${endpoint}`);
