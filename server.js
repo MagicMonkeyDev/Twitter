@@ -21,12 +21,6 @@ if (missingEnvVars.length > 0) {
   process.exit(1);
 }
 
-// Validate Twitter Bearer Token format
-if (!process.env.TWITTER_BEARER_TOKEN.trim().match(/^(Bearer )?[A-Za-z0-9-._~+/]+=*$/)) {
-  console.error('Invalid Twitter Bearer Token format');
-  process.exit(1);
-}
-
 const app = express();
 const port = process.env.PORT || 3000;
 

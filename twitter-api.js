@@ -1,7 +1,6 @@
 const TWITTER_API_BASE = 'https://api.twitter.com/2';
 
 async function fetchWithAuth(endpoint) {
-  // Validate bearer token
   if (!process.env.TWITTER_BEARER_TOKEN) {
     throw {
       status: 500,
@@ -10,11 +9,9 @@ async function fetchWithAuth(endpoint) {
     };
   }
 
-  const token = process.env.TWITTER_BEARER_TOKEN.trim();
-  if (!token.startsWith('Bearer ')) {
-    // Ensure token has Bearer prefix
-    token = `Bearer ${token}`;
-  }
+  // Clean and format the bearer token
+  let token = process.env.TWITTER_BEARER_TOKEN.trim();
+  token = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
 
   const response = await fetch(`${TWITTER_API_BASE}${endpoint}`, {
     headers: {
