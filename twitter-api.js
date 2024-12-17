@@ -1,11 +1,35 @@
 const TWITTER_API_BASE = 'https://api.twitter.com/2';
 const TWITTER_API_VERSION = '2';
-const TWITTER_API_TIMEOUT = 10000; // 10 second timeout
+const TWITTER_API_TIMEOUT = 15000; // 15 second timeout
 
 const log = {
   info: (...args) => console.log(new Date().toISOString(), ...args),
   error: (...args) => console.error(new Date().toISOString(), ...args)
 };
+
+// Validate Twitter API permissions
+async function validateApiPermissions(token) {
+  try {
+    const response = await fetch('https://api.twitter.com/2/tweets/search/recent?query=test', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (response.status === 401) {
+      const error = await response.json();
+      log.error('Permission validation failed:', error);
+      
+      if (error?.title?.includes('Unauthorized')) {
+        throw new Error('Twitter API requires elevated access. Please ensure you have enabled elevated access in the Twitter Developer Portal.');
+      }
+    }
+  } catch (error) {
+    log.error('Error validating permissions:', error);
+    throw error;
+  }
+}
 
 function prepareAuthToken(token) {
   if (!token) return null;
@@ -25,6 +49,13 @@ const fetchWithAuth = async (endpoint) => {
   const token = prepareAuthToken(process.env.TWITTER_BEARER_TOKEN);
   if (!token) {
     throw new Error('Invalid Twitter Bearer Token');
+  }
+
+  // Validate permissions on first request
+  static let permissionsValidated = false;
+  if (!permissionsValidated) {
+    await validateApiPermissions(token);
+    permissionsValidated = true;
   }
 
   // Log request details (without sensitive data)
@@ -53,7 +84,7 @@ const fetchWithAuth = async (endpoint) => {
     if (response.status === 401) {
       // Check response for specific error types
       const errorType = error?.errors?.[0]?.type;
-      const errorMessage = error?.errors?.[0]?.message;
+      const errorMessage = error?.errors?.[0]?.message || error?.detail || error?.title;
       
       // Check for specific permission errors
       if (errorType === 'about:blank' && errorMessage?.includes('User')) {
