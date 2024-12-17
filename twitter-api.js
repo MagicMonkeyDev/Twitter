@@ -1,55 +1,57 @@
 const TWITTER_API_BASE = 'https://api.twitter.com/2';
 
-const log = {
-  info: (...args) => console.log(new Date().toISOString(), ...args),
-  error: (...args) => console.error(new Date().toISOString(), ...args)
-};
-
-const fetchWithAuth = async (endpoint) => {
-  let token = process.env.TWITTER_BEARER_TOKEN;
-  
+// Helper function to validate and format bearer token
+function formatBearerToken(token) {
   if (!token) {
     throw new Error('Twitter Bearer Token is not configured');
   }
 
-  // Remove any 'Bearer ' prefix if it exists and add it back properly
+  // Remove any existing 'Bearer ' prefix and URL encoding
   token = token.replace(/^Bearer\s+/i, '');
-  const bearerToken = `Bearer ${token}`;
+  token = decodeURIComponent(token);
 
-  // Log request details (without sensitive data)
-  log.info(`Making Twitter API request to: ${endpoint}`);
+  return `Bearer ${token}`;
+}
 
-  const response = await fetch(`${TWITTER_API_BASE}${endpoint}`, {
-    headers: {
-      'Authorization': bearerToken,
-      'Content-Type': 'application/json'
-    }
-  });
+const fetchWithAuth = async (endpoint) => {
+  try {
+    const bearerToken = formatBearerToken(process.env.TWITTER_BEARER_TOKEN);
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => null);
-    log.error('Twitter API Error:', {
-      status: response.status,
-      endpoint
+    console.log(`Making Twitter API request to: ${endpoint}`);
+
+    const response = await fetch(`${TWITTER_API_BASE}${endpoint}`, {
+      headers: {
+        'Authorization': bearerToken,
+        'Content-Type': 'application/json'
+      }
     });
 
-    // Handle specific error cases
-    if (response.status === 401) {
+    if (!response.ok) {
+      const error = await response.json().catch(() => null);
+      console.error('Twitter API Error:', {
+        status: response.status,
+        endpoint,
+        error: error?.errors?.[0]?.message
+      });
+
       throw {
-        status: 401,
-        title: 'Twitter API Authentication Error',
-        description: 'Unable to authenticate with Twitter API'
+        status: response.status,
+        title: 'Twitter API Error',
+        description: error?.errors?.[0]?.message || 'Failed to fetch Twitter data'
       };
     }
 
-    throw {
-      status: response.status,
-      title: 'Twitter API Error',
-      description: error?.errors?.[0]?.message || 'Failed to fetch Twitter data'
-    };
+    return response.json();
+  } catch (error) {
+    if (error.status === 401) {
+      throw {
+        status: 401,
+        title: 'Twitter API Authentication Error',
+        description: 'Please check your Twitter API credentials'
+      };
+    }
+    throw error;
   }
-
-  return response.json();
 };
 
 export async function fetchTwitterProfile(username) {
