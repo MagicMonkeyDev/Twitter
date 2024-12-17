@@ -1,11 +1,16 @@
 const TWITTER_API_BASE = 'https://api.twitter.com/2';
 const TWITTER_API_VERSION = '2';
-const BEARER_TOKEN_REGEX = /^[A-Za-z0-9+/=_\-]+$/;
+
+// OAuth 2.0 configuration
+const OAUTH_CONFIG = {
+  clientId: process.env.TWITTER_CLIENT_ID,
+  clientSecret: process.env.TWITTER_CLIENT_SECRET,
+  bearerToken: process.env.TWITTER_BEARER_TOKEN
+};
 
 const log = {
   info: (...args) => console.log(new Date().toISOString(), ...args),
   error: (...args) => console.error(new Date().toISOString(), ...args)
-};
 
 function validateBearerToken(token) {
   if (!token) return false;
@@ -85,6 +90,15 @@ async function fetchWithAuth(endpoint) {
       const errorType = error?.errors?.[0]?.type;
       const errorMessage = error?.errors?.[0]?.message;
       
+      // Check for specific permission errors
+      if (errorType === 'about:blank' && errorMessage?.includes('User')) {
+        throw {
+          status: 401,
+          title: 'Read Permission Required',
+          description: 'Unable to read tweets. Please ensure "Read" permission is enabled in Twitter Developer Portal.'
+        };
+      }
+
       // Handle OAuth configuration errors
       if (errorMessage?.includes('OAuth')) {
         throw {
@@ -97,8 +111,8 @@ async function fetchWithAuth(endpoint) {
       if (errorType === 'https://api.twitter.com/2/problems/not-authorized-for-resource') {
         throw {
           status: 401,
-          title: 'Insufficient Permissions',
-          description: 'The Twitter API token does not have the required permissions. Please ensure OAuth 2.0 settings and Read permissions are properly configured.'
+          title: 'Read Permission Required',
+          description: 'The Twitter API token needs "Read" permission. Please enable it in Twitter Developer Portal and regenerate your bearer token.'
         };
       }
       

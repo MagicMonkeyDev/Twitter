@@ -7,9 +7,9 @@ services:
     healthCheckPath: /health
     healthCheckTimeout: 100
     envVars:
-      - key: TWITTER_API_KEY
+      - key: TWITTER_CLIENT_ID
         sync: false
-      - key: TWITTER_API_SECRET
+      - key: TWITTER_CLIENT_SECRET
         sync: false
       - key: TWITTER_BEARER_TOKEN
         sync: false

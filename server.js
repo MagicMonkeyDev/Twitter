@@ -46,6 +46,8 @@ function validateTwitterToken(token) {
 // Log environment status (but not the actual values)
 log.info('Environment Check:', {
   TWITTER_BEARER_TOKEN: !!process.env.TWITTER_BEARER_TOKEN,
+  TWITTER_CLIENT_ID: !!process.env.TWITTER_CLIENT_ID,
+  TWITTER_CLIENT_SECRET: !!process.env.TWITTER_CLIENT_SECRET,
   OPENAI_API_KEY: !!process.env.OPENAI_API_KEY,
   CORS_ORIGIN: process.env.CORS_ORIGIN || '*'
 });
@@ -53,6 +55,8 @@ log.info('Environment Check:', {
 // Validate required environment variables
 const requiredEnvVars = [
   'TWITTER_BEARER_TOKEN',
+  'TWITTER_CLIENT_ID',
+  'TWITTER_CLIENT_SECRET',
   'OPENAI_API_KEY'
 ];
 
