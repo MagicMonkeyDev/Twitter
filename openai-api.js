@@ -37,11 +37,11 @@ export async function generatePersonality(tweets) {
     const response = await fetchOpenAI([
       {
         role: 'system',
-        content: 'You are an expert at analyzing Twitter content and determining personality traits. List 4 key personality traits based on the tweet content provided. Format each trait as a single word or short phrase.'
+        content: 'You are an expert at analyzing Twitter profiles and determining personality traits. List 4 key personality traits based on the Twitter bio provided. Format each trait as a single word or short phrase, focusing on professional and public-facing characteristics.'
       },
       {
         role: 'user',
-        content: `Analyze these tweets and provide 4 key personality traits:\n\n${tweets.join('\n')}`
+        content: `Analyze this Twitter bio and provide 4 key personality traits:\n\n${tweets[0]}`
       }
     ]);
 

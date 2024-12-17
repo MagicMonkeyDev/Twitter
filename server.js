@@ -88,7 +88,8 @@ app.get('/api/twitter/:username', async (req, res) => {
   log.info(`Fetching profile for username: ${req.params.username}`);
   try {
     const profile = await fetchTwitterProfile(req.params.username);
-    const personality = await generatePersonality(profile.tweets.map(t => t.text));
+    // Generate personality based on bio instead of tweets
+    const personality = await generatePersonality([profile.bio]);
     
     log.info(`Successfully generated profile for: ${req.params.username}`);
     res.json({
