@@ -1,19 +1,24 @@
 const TWITTER_API_BASE = 'https://api.twitter.com/2';
 
 async function fetchWithAuth(endpoint) {
+  // Validate bearer token
   if (!process.env.TWITTER_BEARER_TOKEN) {
     throw {
       status: 500,
       title: 'Configuration Error',
-      description: 'Twitter API authentication is not configured properly'
+      description: 'Twitter API Bearer Token is not configured'
     };
   }
 
-  console.log('Making Twitter API request with token:', process.env.TWITTER_BEARER_TOKEN.substring(0, 10) + '...');
+  const token = process.env.TWITTER_BEARER_TOKEN.trim();
+  if (!token.startsWith('Bearer ')) {
+    // Ensure token has Bearer prefix
+    token = `Bearer ${token}`;
+  }
 
   const response = await fetch(`${TWITTER_API_BASE}${endpoint}`, {
     headers: {
-      'Authorization': `Bearer ${process.env.TWITTER_BEARER_TOKEN}`,
+      'Authorization': token,
       'Content-Type': 'application/json'
     }
   });
