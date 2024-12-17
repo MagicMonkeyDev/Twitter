@@ -1,79 +1,42 @@
 const TWITTER_API_BASE = 'https://api.twitter.com/2';
 const TWITTER_API_VERSION = '2';
-const BEARER_TOKEN_REGEX = /^[A-Za-z0-9%._\-]+$/;
-
-// OAuth 2.0 configuration
-const OAUTH_CONFIG = {
-  clientId: process.env.TWITTER_CLIENT_ID,
-  clientSecret: process.env.TWITTER_CLIENT_SECRET,
-  bearerToken: process.env.TWITTER_BEARER_TOKEN
-};
+const TWITTER_API_TIMEOUT = 10000; // 10 second timeout
 
 const log = {
   info: (...args) => console.log(new Date().toISOString(), ...args),
   error: (...args) => console.error(new Date().toISOString(), ...args)
 };
 
-const validateBearerToken = (token) => {
-  if (!token) return false;
-  const cleanToken = token.trim();
+function prepareAuthToken(token) {
+  if (!token) return null;
   
-  try {
-    // URL decode the token first
-    const decodedToken = decodeURIComponent(cleanToken);
-
-    // Remove 'Bearer ' prefix if present
-    const tokenValue = decodedToken.startsWith('Bearer ') 
-      ? decodedToken.substring(7).trim() 
-      : decodedToken;
+  // Decode URL-encoded token
+  const decodedToken = decodeURIComponent(token);
   
-    // Log token validation attempt (without revealing the full token)
-    log.info('Validating token:', tokenValue.substring(0, 10) + '...');
-  
-    const isValid = tokenValue.length > 0 && BEARER_TOKEN_REGEX.test(tokenValue);
-    log.info('Token validation result:', isValid ? 'valid' : 'invalid');
-  
-    return isValid;
-  } catch (error) {
-    log.error('Token validation error:', error);
-    return false;
-  }
-};
+  // Remove any 'Bearer ' prefix if present
+  return decodedToken.replace(/^Bearer\s+/i, '').trim();
+}
 
 const fetchWithAuth = async (endpoint) => {
-  let token = process.env.TWITTER_BEARER_TOKEN;
-
-  // Decode the token if it's URL encoded
-  try {
-    token = decodeURIComponent(token);
-  } catch (error) {
-    log.error('Error decoding token:', error);
+  if (!process.env.TWITTER_BEARER_TOKEN) {
+    throw new Error('Twitter Bearer Token is not configured');
   }
 
-  if (!validateBearerToken(token)) {
-    log.error('Invalid Twitter Bearer Token format');
-    throw {
-      status: 500,
-      title: 'Configuration Error',
-      description: 'Twitter API authentication configuration error'
-    };
+  const token = prepareAuthToken(process.env.TWITTER_BEARER_TOKEN);
+  if (!token) {
+    throw new Error('Invalid Twitter Bearer Token');
   }
-
-  // Ensure token has 'Bearer ' prefix
-  const cleanToken = token.trim();
-  const authToken = cleanToken.startsWith('Bearer ')
-    ? cleanToken
-    : `Bearer ${cleanToken}`;
 
   // Log request details (without sensitive data)
   log.info(`Making Twitter API request to: ${endpoint}`);
 
   const response = await fetch(`${TWITTER_API_BASE}${endpoint}`, {
     headers: {
-      'Authorization': authToken,
+      'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
       'User-Agent': `TwitterAIAgent/${TWITTER_API_VERSION}`
-    }
+    },
+    timeout: TWITTER_API_TIMEOUT
   });
 
   if (!response.ok) {

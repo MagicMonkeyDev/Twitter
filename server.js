@@ -30,27 +30,9 @@ process.on('unhandledRejection', (reason, promise) => {
   log.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
-// Function to validate Twitter Bearer Token
-function validateTwitterToken(token) {
-  if (!token) return false;
-  
-  const cleanToken = token.trim();
-  
-  // Remove 'Bearer ' prefix if present
-  const tokenValue = cleanToken.startsWith('Bearer ') 
-    ? cleanToken.substring(7).trim() 
-    : cleanToken;
-  
-  const isValid = tokenValue.length > 0 && /^[A-Za-z0-9%._\-]+$/.test(tokenValue);
-  log.info('Token validation result:', isValid ? 'valid format' : 'invalid format');
-  return isValid;
-}
-
 // Log environment status (but not the actual values)
 log.info('Environment Check:', {
   TWITTER_BEARER_TOKEN: !!process.env.TWITTER_BEARER_TOKEN,
-  TWITTER_CLIENT_ID: !!process.env.TWITTER_CLIENT_ID,
-  TWITTER_CLIENT_SECRET: !!process.env.TWITTER_CLIENT_SECRET,
   OPENAI_API_KEY: !!process.env.OPENAI_API_KEY,
   CORS_ORIGIN: process.env.CORS_ORIGIN || '*'
 });
@@ -58,8 +40,6 @@ log.info('Environment Check:', {
 // Validate required environment variables
 const requiredEnvVars = [
   'TWITTER_BEARER_TOKEN',
-  'TWITTER_CLIENT_ID',
-  'TWITTER_CLIENT_SECRET',
   'OPENAI_API_KEY'
 ];
 
@@ -67,11 +47,6 @@ const requiredEnvVars = [
 const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
 if (missingEnvVars.length > 0) {
   throw new Error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
-}
-
-// Validate Twitter Bearer Token format
-if (!validateTwitterToken(process.env.TWITTER_BEARER_TOKEN)) {
-  throw new Error('Invalid Twitter Bearer Token format');
 }
 
 // Log token format (without revealing the actual token)
