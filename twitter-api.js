@@ -8,24 +8,25 @@ const log = {
 
 function validateBearerToken(token) {
   if (!token) return false;
-  // Token should start with 'Bearer ' or be a valid token string
   const cleanToken = token.trim();
-  
-  // Log token format (safely)
-  log.info('Validating token format:', {
-    length: token.length,
-    hasBearer: token.startsWith('Bearer '),
-    isBase64Like: /^[A-Za-z0-9-._~+/]+=*$/.test(cleanToken)
-  });
-  
-  return /^[A-Za-z0-9-._~+/]+=*$/.test(cleanToken) || 
-         /^Bearer [A-Za-z0-9-._~+/]+=*$/.test(cleanToken);
+
+  // Remove 'Bearer ' prefix if present
+  const tokenValue = cleanToken.startsWith('Bearer ') 
+    ? cleanToken.substring(7).trim()
+    : cleanToken;
+
+  // Twitter Bearer tokens are typically longer than 50 characters
+  if (tokenValue.length < 50) return false;
+
+  // Check if token matches expected format
+  return /^[A-Za-z0-9%]+$/i.test(tokenValue);
 }
 
 async function fetchWithAuth(endpoint) {
   const token = process.env.TWITTER_BEARER_TOKEN;
   
   if (!validateBearerToken(token)) {
+    log.error('Invalid Twitter Bearer Token format');
     throw {
       status: 500,
       title: 'Configuration Error',
@@ -34,7 +35,9 @@ async function fetchWithAuth(endpoint) {
   }
 
   // Ensure token has 'Bearer ' prefix
-  const authToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+  const authToken = token.trim().startsWith('Bearer ')
+    ? token.trim()
+    : `Bearer ${token.trim()}`;
 
   // Log request details (without sensitive data)
   log.info(`Making Twitter API request to: ${endpoint}`);

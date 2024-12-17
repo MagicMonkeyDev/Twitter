@@ -30,13 +30,17 @@ process.on('unhandledRejection', (reason, promise) => {
 // Function to validate Twitter Bearer Token
 function validateTwitterToken(token) {
   if (!token) return false;
+  
   const cleanToken = token.trim();
-  // Remove 'Bearer ' prefix if present for validation
   const tokenValue = cleanToken.startsWith('Bearer ') 
     ? cleanToken.substring(7).trim()
     : cleanToken;
   
-  const isValid = /^[A-Za-z0-9-._~+/]+=*$/.test(tokenValue);
+  // Twitter Bearer tokens are typically longer than 50 characters
+  if (tokenValue.length < 50) return false;
+
+  // Check if token matches expected format
+  const isValid = /^[A-Za-z0-9%]+$/i.test(tokenValue);
   log.info('Token validation result:', isValid ? 'valid format' : 'invalid format');
   return isValid;
 }
