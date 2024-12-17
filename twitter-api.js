@@ -1,33 +1,42 @@
 const TWITTER_API_BASE = 'https://api.twitter.com/2';
 const TWITTER_API_VERSION = '2';
 const TWITTER_API_TIMEOUT = 15000; // 15 second timeout
-let permissionsValidated = false;
+
+// Required Twitter API scopes
+const REQUIRED_SCOPES = [
+  'tweet.read',
+  'users.read'
+];
 
 const log = {
   info: (...args) => console.log(new Date().toISOString(), ...args),
   error: (...args) => console.error(new Date().toISOString(), ...args)
 };
 
-// Validate Twitter API permissions
-async function validateApiPermissions(token) {
+// Validate Twitter API access
+async function validateApiAccess(token) {
   try {
-    const response = await fetch('https://api.twitter.com/2/tweets/search/recent?query=test', {
+    // Check API access using a simple endpoint
+    const response = await fetch(`${TWITTER_API_BASE}/users/me`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       }
     });
 
-    if (response.status === 401) {
-      const error = await response.json();
-      log.error('Permission validation failed:', error);
-      
-      if (error?.title?.includes('Unauthorized')) {
-        throw new Error('Twitter API requires elevated access. Please ensure you have enabled elevated access in the Twitter Developer Portal.');
-      }
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw {
+        status: response.status,
+        title: 'API Access Error',
+        description: data?.errors?.[0]?.message || 'Failed to validate API access'
+      };
     }
+    
+    return true;
   } catch (error) {
-    log.error('Error validating permissions:', error);
+    log.error('Error validating API access:', error);
     throw error;
   }
 }
@@ -52,12 +61,6 @@ const fetchWithAuth = async (endpoint) => {
     throw new Error('Invalid Twitter Bearer Token');
   }
 
-  // Validate permissions on first request
-  if (!permissionsValidated) {
-    await validateApiPermissions(token);
-    permissionsValidated = true;
-  }
-
   // Log request details (without sensitive data)
   log.info(`Making Twitter API request to: ${endpoint}`);
 
@@ -65,7 +68,8 @@ const fetchWithAuth = async (endpoint) => {
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
-      'User-Agent': `TwitterAIAgent/${TWITTER_API_VERSION}`
+      'User-Agent': `TwitterAIAgent/${TWITTER_API_VERSION}`,
+      'x-app-version': '1.0.0'
     },
     timeout: TWITTER_API_TIMEOUT
   });
