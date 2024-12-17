@@ -9,19 +9,31 @@ async function fetchWithAuth(endpoint) {
     };
   }
 
-  // Clean and format the bearer token
-  let token = process.env.TWITTER_BEARER_TOKEN.trim();
-  token = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+  // Validate and format the bearer token
+  const token = process.env.TWITTER_BEARER_TOKEN.trim();
+  
+  // Check if token matches expected format
+  if (!/^[A-Za-z0-9-._~+/]+=*$/.test(token)) {
+    throw {
+      status: 500,
+      title: 'Configuration Error',
+      description: 'Invalid Twitter Bearer Token format'
+    };
+  }
 
   const response = await fetch(`${TWITTER_API_BASE}${endpoint}`, {
     headers: {
-      'Authorization': token,
+      'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'
     }
   });
 
   if (!response.ok) {
     const error = await response.json().catch(() => null);
+    console.error('Twitter API Error:', {
+      status: response.status,
+      error: error?.errors?.[0]
+    });
     throw {
       status: response.status,
       title: 'Twitter API Error',

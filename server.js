@@ -8,6 +8,13 @@ import { generatePersonality } from './openai-api.js';
 // Load environment variables
 dotenv.config();
 
+// Log environment status (but not the actual values)
+console.log('Environment Check:', {
+  TWITTER_BEARER_TOKEN: !!process.env.TWITTER_BEARER_TOKEN,
+  OPENAI_API_KEY: !!process.env.OPENAI_API_KEY,
+  CORS_ORIGIN: process.env.CORS_ORIGIN || '*'
+});
+
 // Validate required environment variables
 const requiredEnvVars = [
   'TWITTER_BEARER_TOKEN',
@@ -17,7 +24,13 @@ const requiredEnvVars = [
 // Validate environment variables
 const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
 if (missingEnvVars.length > 0) {
-  console.error('Missing required environment variables:', missingEnvVars.join(', '));
+  throw new Error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
+}
+
+// Validate Twitter Bearer Token format
+const token = process.env.TWITTER_BEARER_TOKEN.trim();
+if (!/^[A-Za-z0-9-._~+/]+=*$/.test(token)) {
+  throw new Error('Invalid Twitter Bearer Token format');
   process.exit(1);
 }
 
