@@ -1,10 +1,23 @@
 const TWITTER_API_BASE = 'https://api.twitter.com/2';
 const TWITTER_API_VERSION = '2';
 
+const log = {
+  info: (...args) => console.log(new Date().toISOString(), ...args),
+  error: (...args) => console.error(new Date().toISOString(), ...args)
+};
+
 function validateBearerToken(token) {
   if (!token) return false;
   // Token should start with 'Bearer ' or be a valid token string
   const cleanToken = token.trim();
+  
+  // Log token format (safely)
+  log.info('Validating token format:', {
+    length: token.length,
+    hasBearer: token.startsWith('Bearer '),
+    isBase64Like: /^[A-Za-z0-9-._~+/]+=*$/.test(cleanToken)
+  });
+  
   return /^[A-Za-z0-9-._~+/]+=*$/.test(cleanToken) || 
          /^Bearer [A-Za-z0-9-._~+/]+=*$/.test(cleanToken);
 }
@@ -24,7 +37,7 @@ async function fetchWithAuth(endpoint) {
   const authToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
 
   // Log request details (without sensitive data)
-  console.log(`Making Twitter API request to: ${endpoint}`);
+  log.info(`Making Twitter API request to: ${endpoint}`);
 
   const response = await fetch(`${TWITTER_API_BASE}${endpoint}`, {
     headers: {
@@ -37,7 +50,7 @@ async function fetchWithAuth(endpoint) {
 
   if (!response.ok) {
     const error = await response.json().catch(() => null);
-    console.error('Twitter API Error:', {
+    log.error('Twitter API Error:', {
       status: response.status,
       endpoint,
       error: error?.errors?.[0],

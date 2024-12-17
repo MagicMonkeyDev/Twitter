@@ -8,16 +8,24 @@ import { generatePersonality } from './openai-api.js';
 // Load environment variables
 dotenv.config();
 
+// Enhanced logging
+const log = {
+  info: (...args) => console.log(new Date().toISOString(), ...args),
+  error: (...args) => console.error(new Date().toISOString(), ...args)
+};
+
 // Function to validate Twitter Bearer Token
 function validateTwitterToken(token) {
   if (!token) return false;
   const cleanToken = token.trim();
-  return /^[A-Za-z0-9-._~+/]+=*$/.test(cleanToken) || 
+  const isValid = /^[A-Za-z0-9-._~+/]+=*$/.test(cleanToken) || 
          /^Bearer [A-Za-z0-9-._~+/]+=*$/.test(cleanToken);
+  log.info('Token validation result:', isValid ? 'valid format' : 'invalid format');
+  return isValid;
 }
 
 // Log environment status (but not the actual values)
-console.log('Environment Check:', {
+log.info('Environment Check:', {
   TWITTER_BEARER_TOKEN: !!process.env.TWITTER_BEARER_TOKEN,
   OPENAI_API_KEY: !!process.env.OPENAI_API_KEY,
   CORS_ORIGIN: process.env.CORS_ORIGIN || '*'
@@ -64,17 +72,30 @@ app.use(cors({
 app.use(express.json());
 app.use(limiter);
 
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    twitter: !!process.env.TWITTER_BEARER_TOKEN,
+    openai: !!process.env.OPENAI_API_KEY
+  });
+});
+
 // Routes
 app.get('/api/twitter/:username', async (req, res) => {
+  log.info(`Fetching profile for username: ${req.params.username}`);
   try {
     const profile = await fetchTwitterProfile(req.params.username);
     const personality = await generatePersonality(profile.tweets.map(t => t.text));
     
+    log.info(`Successfully generated profile for: ${req.params.username}`);
     res.json({
       ...profile,
       personality
     });
   } catch (error) {
+    log.error('Error processing request:', error);
     res.status(error.status || 500).json({
       error: {
         title: error.title || 'Server Error',
@@ -85,5 +106,5 @@ app.get('/api/twitter/:username', async (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+  log.info(`Server running on port ${port}`);
 });
