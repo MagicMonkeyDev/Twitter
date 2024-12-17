@@ -3,11 +3,13 @@ const TWITTER_API_BASE = 'https://api.twitter.com/2';
 async function fetchWithAuth(endpoint) {
   if (!process.env.TWITTER_BEARER_TOKEN) {
     throw {
-      status: 401,
+      status: 500,
       title: 'Configuration Error',
       description: 'Twitter API authentication is not configured properly'
     };
   }
+
+  console.log('Making Twitter API request with token:', process.env.TWITTER_BEARER_TOKEN.substring(0, 10) + '...');
 
   const response = await fetch(`${TWITTER_API_BASE}${endpoint}`, {
     headers: {
