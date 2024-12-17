@@ -27,12 +27,11 @@ if (missingEnvVars.length > 0) {
   throw new Error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
 }
 
-// Validate Twitter Bearer Token format
-const token = process.env.TWITTER_BEARER_TOKEN.trim();
-if (!/^[A-Za-z0-9-._~+/]+=*$/.test(token)) {
-  throw new Error('Invalid Twitter Bearer Token format');
-  process.exit(1);
-}
+// Log token format (without revealing the actual token)
+console.log('Making Twitter API request with token:', 
+  process.env.TWITTER_BEARER_TOKEN ? 
+  process.env.TWITTER_BEARER_TOKEN.substring(0, 10) + '...' : 
+  'Not provided');
 
 const app = express();
 const port = process.env.PORT || 3000;

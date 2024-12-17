@@ -1,4 +1,5 @@
 const TWITTER_API_BASE = 'https://api.twitter.com/2';
+const TWITTER_API_VERSION = '2';
 
 async function fetchWithAuth(endpoint) {
   if (!process.env.TWITTER_BEARER_TOKEN) {
@@ -9,22 +10,15 @@ async function fetchWithAuth(endpoint) {
     };
   }
 
-  // Validate and format the bearer token
-  const token = process.env.TWITTER_BEARER_TOKEN.trim();
-  
-  // Check if token matches expected format
-  if (!/^[A-Za-z0-9-._~+/]+=*$/.test(token)) {
-    throw {
-      status: 500,
-      title: 'Configuration Error',
-      description: 'Invalid Twitter Bearer Token format'
-    };
-  }
+  // Log request details (without sensitive data)
+  console.log(`Making Twitter API request to: ${endpoint}`);
 
   const response = await fetch(`${TWITTER_API_BASE}${endpoint}`, {
     headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
+      'Authorization': `Bearer ${process.env.TWITTER_BEARER_TOKEN.trim()}`,
+      'Content-Type': 'application/json',
+      'User-Agent': 'v2TweetLookupJS',
+      'x-api-version': TWITTER_API_VERSION
     }
   });
 
@@ -32,8 +26,21 @@ async function fetchWithAuth(endpoint) {
     const error = await response.json().catch(() => null);
     console.error('Twitter API Error:', {
       status: response.status,
-      error: error?.errors?.[0]
+      endpoint,
+      error: error?.errors?.[0],
+      type: error?.type,
+      title: error?.title
     });
+
+    // Handle specific error cases
+    if (response.status === 401) {
+      throw {
+        status: 401,
+        title: 'Authentication Error',
+        description: 'Please check the Twitter API credentials'
+      };
+    }
+
     throw {
       status: response.status,
       title: 'Twitter API Error',
