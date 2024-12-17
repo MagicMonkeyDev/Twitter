@@ -1,5 +1,6 @@
 const TWITTER_API_BASE = 'https://api.twitter.com/2';
 const TWITTER_API_VERSION = '2';
+const BEARER_TOKEN_REGEX = /^[A-Za-z0-9%._\-]+$/;
 
 // OAuth 2.0 configuration
 const OAUTH_CONFIG = {
@@ -11,8 +12,9 @@ const OAUTH_CONFIG = {
 const log = {
   info: (...args) => console.log(new Date().toISOString(), ...args),
   error: (...args) => console.error(new Date().toISOString(), ...args)
+};
 
-function validateBearerToken(token) {
+const validateBearerToken = (token) => {
   if (!token) return false;
   const cleanToken = token.trim();
   
@@ -36,9 +38,9 @@ function validateBearerToken(token) {
     log.error('Token validation error:', error);
     return false;
   }
-}
+};
 
-async function fetchWithAuth(endpoint) {
+const fetchWithAuth = async (endpoint) => {
   let token = process.env.TWITTER_BEARER_TOKEN;
 
   // Decode the token if it's URL encoded
@@ -140,7 +142,7 @@ async function fetchWithAuth(endpoint) {
   }
 
   return response.json();
-}
+};
 
 export async function fetchTwitterProfile(username) {
   // Get user data
