@@ -5,7 +5,20 @@ import dotenv from 'dotenv';
 import { fetchTwitterProfile } from './twitter-api.js';
 import { generatePersonality } from './openai-api.js';
 
+// Load environment variables
 dotenv.config();
+
+// Validate required environment variables
+const requiredEnvVars = [
+  'TWITTER_BEARER_TOKEN',
+  'OPENAI_API_KEY'
+];
+
+const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
+if (missingEnvVars.length > 0) {
+  console.error('Missing required environment variables:', missingEnvVars.join(', '));
+  process.exit(1);
+}
 
 const app = express();
 const port = process.env.PORT || 3000;
