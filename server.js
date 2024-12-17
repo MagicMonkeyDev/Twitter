@@ -12,6 +12,9 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
 
+// Configure trust proxy settings for running behind Render's proxy
+app.set('trust proxy', 1);
+
 // Enhanced logging
 const log = {
   info: (...args) => console.log(new Date().toISOString(), ...args),
