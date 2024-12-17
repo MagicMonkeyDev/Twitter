@@ -1,6 +1,6 @@
 const TWITTER_API_BASE = 'https://api.twitter.com/2';
 const TWITTER_API_VERSION = '2';
-const BEARER_TOKEN_REGEX = /^[A-Za-z0-9%._\-]+$/;
+const BEARER_TOKEN_REGEX = /^[A-Za-z0-9+/%=_\-]+$/;
 
 const log = {
   info: (...args) => console.log(new Date().toISOString(), ...args),
@@ -15,8 +15,14 @@ function validateBearerToken(token) {
   const tokenValue = cleanToken.startsWith('Bearer ') 
     ? cleanToken.substring(7).trim() 
     : cleanToken;
-
-  return tokenValue.length > 0 && BEARER_TOKEN_REGEX.test(tokenValue);
+  
+  // Log token validation attempt (without revealing the full token)
+  log.info('Validating token:', tokenValue.substring(0, 10) + '...');
+  
+  const isValid = tokenValue.length > 0 && BEARER_TOKEN_REGEX.test(tokenValue);
+  log.info('Token validation result:', isValid ? 'valid' : 'invalid');
+  
+  return isValid;
 }
 
 async function fetchWithAuth(endpoint) {
