@@ -1,21 +1,34 @@
 const TWITTER_API_BASE = 'https://api.twitter.com/2';
 const TWITTER_API_VERSION = '2';
 
+function validateBearerToken(token) {
+  if (!token) return false;
+  // Token should start with 'Bearer ' or be a valid token string
+  const cleanToken = token.trim();
+  return /^[A-Za-z0-9-._~+/]+=*$/.test(cleanToken) || 
+         /^Bearer [A-Za-z0-9-._~+/]+=*$/.test(cleanToken);
+}
+
 async function fetchWithAuth(endpoint) {
-  if (!process.env.TWITTER_BEARER_TOKEN) {
+  const token = process.env.TWITTER_BEARER_TOKEN;
+  
+  if (!validateBearerToken(token)) {
     throw {
       status: 500,
       title: 'Configuration Error',
-      description: 'Twitter API Bearer Token is not configured'
+      description: 'Invalid Twitter API Bearer Token format'
     };
   }
+
+  // Ensure token has 'Bearer ' prefix
+  const authToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
 
   // Log request details (without sensitive data)
   console.log(`Making Twitter API request to: ${endpoint}`);
 
   const response = await fetch(`${TWITTER_API_BASE}${endpoint}`, {
     headers: {
-      'Authorization': `Bearer ${process.env.TWITTER_BEARER_TOKEN.trim()}`,
+      'Authorization': authToken,
       'Content-Type': 'application/json',
       'User-Agent': 'v2TweetLookupJS',
       'x-api-version': TWITTER_API_VERSION
