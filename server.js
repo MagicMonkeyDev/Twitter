@@ -8,18 +8,35 @@ import { generatePersonality } from './openai-api.js';
 // Load environment variables
 dotenv.config();
 
+// Initialize Express app early to catch startup errors
+const app = express();
+const port = process.env.PORT || 3000;
+
 // Enhanced logging
 const log = {
   info: (...args) => console.log(new Date().toISOString(), ...args),
   error: (...args) => console.error(new Date().toISOString(), ...args)
 };
 
+process.on('uncaughtException', (error) => {
+  log.error('Uncaught Exception:', error);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  log.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
 // Function to validate Twitter Bearer Token
 function validateTwitterToken(token) {
   if (!token) return false;
   const cleanToken = token.trim();
-  const isValid = /^[A-Za-z0-9-._~+/]+=*$/.test(cleanToken) || 
-         /^Bearer [A-Za-z0-9-._~+/]+=*$/.test(cleanToken);
+  // Remove 'Bearer ' prefix if present for validation
+  const tokenValue = cleanToken.startsWith('Bearer ') 
+    ? cleanToken.substring(7).trim()
+    : cleanToken;
+  
+  const isValid = /^[A-Za-z0-9-._~+/]+=*$/.test(tokenValue);
   log.info('Token validation result:', isValid ? 'valid format' : 'invalid format');
   return isValid;
 }
@@ -54,9 +71,6 @@ console.log('Making Twitter API request with token:',
   process.env.TWITTER_BEARER_TOKEN.substring(0, 10) + '...' : 
   'Not provided');
 
-const app = express();
-const port = process.env.PORT || 3000;
-
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -71,6 +85,9 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(limiter);
+
+// Basic route to confirm server is running
+app.get('/', (req, res) => res.json({ status: 'ok', message: 'Server is running' }));
 
 // Health check endpoint
 app.get('/health', (req, res) => {
