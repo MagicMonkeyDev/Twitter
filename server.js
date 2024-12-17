@@ -8,6 +8,11 @@ import { generatePersonality } from './openai-api.js';
 // Load environment variables
 dotenv.config();
 
+// Ensure Bearer token is properly formatted
+if (process.env.TWITTER_BEARER_TOKEN && !process.env.TWITTER_BEARER_TOKEN.startsWith('Bearer ')) {
+  process.env.TWITTER_BEARER_TOKEN = `Bearer ${process.env.TWITTER_BEARER_TOKEN}`;
+}
+
 // Initialize Express app early to catch startup errors
 const app = express();
 const port = process.env.PORT || 3000;
@@ -52,7 +57,7 @@ if (missingEnvVars.length > 0) {
 // Log token format (without revealing the actual token)
 console.log('Making Twitter API request with token:', 
   process.env.TWITTER_BEARER_TOKEN ? 
-  process.env.TWITTER_BEARER_TOKEN.substring(0, 10) + '...' : 
+  'Bearer XXXX...' : 
   'Not provided');
 
 // Rate limiting

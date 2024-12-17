@@ -1,21 +1,31 @@
 const TWITTER_API_BASE = 'https://api.twitter.com/2';
 
+// Helper function to validate bearer token format
+function validateBearerToken(token) {
+  return token && typeof token === 'string' && token.startsWith('Bearer ');
+}
+
 const log = {
   info: (...args) => console.log(new Date().toISOString(), ...args),
   error: (...args) => console.error(new Date().toISOString(), ...args)
 };
 
 const fetchWithAuth = async (endpoint) => {
-  if (!process.env.TWITTER_BEARER_TOKEN) {
+  const token = process.env.TWITTER_BEARER_TOKEN;
+  
+  if (!token) {
     throw new Error('Twitter Bearer Token is not configured');
   }
+
+  // Ensure token has 'Bearer ' prefix
+  const bearerToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
 
   // Log request details (without sensitive data)
   log.info(`Making Twitter API request to: ${endpoint}`);
 
   const response = await fetch(`${TWITTER_API_BASE}${endpoint}`, {
     headers: {
-      'Authorization': `Bearer ${process.env.TWITTER_BEARER_TOKEN}`,
+      'Authorization': bearerToken,
       'Content-Type': 'application/json'
     }
   });
@@ -61,11 +71,13 @@ export async function fetchTwitterProfile(username) {
   }
 
   const userId = userResponse.data.id;
+  const imageUrl = userResponse.data.profile_image_url?.replace('_normal', '');
 
   return {
     username,
     displayName: userResponse.data.name,
     bio: userResponse.data.description,
+    imageUrl,
     tweets: [], // Empty tweets array since we're not fetching them
     personality: [] // Will be populated by OpenAI
   };
