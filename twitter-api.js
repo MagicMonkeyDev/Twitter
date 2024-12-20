@@ -7,15 +7,20 @@ const apifyClient = new ApifyClient({
 export async function fetchTwitterProfile(username) {
   try {
     // Start the scraper run
-    const run = await apifyClient.actor("quacker/twitter-scraper").call({
-      usernames: [username],
-      maxItems: 1,
+    const run = await apifyClient.actor('quacker/twitter-scraper').call({
+      searchTerms: [`from:${username}`],
+      maxItems: 10,
+      addUserInfo: true,
+      proxyConfig: { useApifyProxy: true }
     });
 
     // Get the results
     const { items } = await apifyClient.dataset(run.defaultDatasetId).listItems();
     
-    if (!items || items.length === 0) {
+    // Find the user info from the tweets
+    const userInfo = items.find(item => item.user)?.user;
+    
+    if (!userInfo) {
       throw {
         status: 404,
         title: 'Profile Not Found',
@@ -23,18 +28,23 @@ export async function fetchTwitterProfile(username) {
       };
     }
 
-    const profile = items[0];
-
     return {
-      username: profile.username,
-      displayName: profile.displayName || profile.username,
-      bio: profile.description || '',
-      imageUrl: profile.profileImageUrl,
+      username: userInfo.username,
+      displayName: userInfo.displayName || userInfo.username,
+      bio: userInfo.description || '',
+      imageUrl: userInfo.profileImageUrl,
       tweets: [], // Empty tweets array since we're not fetching them
       personality: [] // Will be populated by OpenAI
     };
   } catch (error) {
     console.error('Apify API Error:', error);
+    if (error.message?.includes('Invalid token')) {
+      throw {
+        status: 401,
+        title: 'Authentication Error',
+        description: 'Invalid Apify API token'
+      };
+    }
     throw {
       status: error.status || 500,
       title: 'Twitter Scraper Error',
