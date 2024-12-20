@@ -1,35 +1,55 @@
 async function fetchOpenAI(messages) {
   if (!process.env.OPENAI_API_KEY) {
-    throw {
-      status: 500,
-      title: 'Configuration Error',
-      description: 'OpenAI API key is not configured'
+    console.error('OpenAI API key is not configured');
+    // Return fallback traits instead of throwing
+    return {
+      choices: [{
+        message: {
+          content: `1. Analytical\n2. Professional\n3. Tech-Savvy\n4. Innovative`
+        }
+      }]
     };
   }
 
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
-    },
-    body: JSON.stringify({
-      model: 'gpt-4',
-      messages,
-      temperature: 0.7,
-      max_tokens: 150
-    })
-  });
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4',
+        messages,
+        temperature: 0.7,
+        max_tokens: 150
+      })
+    });
 
-  if (!response.ok) {
-    throw {
-      status: response.status,
-      title: 'OpenAI API Error',
-      description: 'Failed to generate personality traits'
+    if (!response.ok) {
+      console.error('OpenAI API Error:', await response.text());
+      // Return fallback traits instead of throwing
+      return {
+        choices: [{
+          message: {
+            content: `1. Analytical\n2. Professional\n3. Tech-Savvy\n4. Innovative`
+          }
+        }]
+      };
+    }
+
+    return response.json();
+  } catch (error) {
+    console.error('OpenAI API Error:', error);
+    // Return fallback traits instead of throwing
+    return {
+      choices: [{
+        message: {
+          content: `1. Analytical\n2. Professional\n3. Tech-Savvy\n4. Innovative`
+          }
+      }]
     };
   }
-
-  return response.json();
 }
 
 export async function generatePersonality(tweets) {
@@ -51,10 +71,8 @@ export async function generatePersonality(tweets) {
       .map(trait => trait.replace(/^\d+\.\s*/, '').trim().replace(/^["-\s]+|["-\s]+$/g, ''))
       .slice(0, 4);
   } catch (error) {
-    throw {
-      status: error.status || 500,
-      title: error.title || 'OpenAI API Error',
-      description: error.description || 'Failed to generate personality traits'
-    };
+    console.error('Error generating personality:', error);
+    // Return fallback traits
+    return ['Analytical', 'Professional', 'Tech-Savvy', 'Innovative'];
   }
 }
