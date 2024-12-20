@@ -32,14 +32,14 @@ process.on('unhandledRejection', (reason, promise) => {
 
 // Log environment status (but not the actual values)
 log.info('Environment Check:', {
-  TWITTER_BEARER_TOKEN: !!process.env.TWITTER_BEARER_TOKEN,
+  APIFY_API_TOKEN: !!process.env.APIFY_API_TOKEN,
   OPENAI_API_KEY: !!process.env.OPENAI_API_KEY,
   CORS_ORIGIN: process.env.CORS_ORIGIN || '*'
 });
 
 // Validate required environment variables
 const requiredEnvVars = [
-  'TWITTER_BEARER_TOKEN',
+  'APIFY_API_TOKEN',
   'OPENAI_API_KEY'
 ];
 
@@ -50,10 +50,7 @@ if (missingEnvVars.length > 0) {
 }
 
 // Log token format (without revealing the actual token)
-console.log('Making Twitter API request with token:', 
-  process.env.TWITTER_BEARER_TOKEN ? 
-  'Bearer XXXX...' : 
-  'Not provided');
+console.log('Using Apify API token:', process.env.APIFY_API_TOKEN ? 'XXXX...' : 'Not provided');
 
 // Rate limiting
 const limiter = rateLimit({
@@ -78,7 +75,7 @@ app.get('/health', (req, res) => {
   res.json({ 
     status: 'ok',
     timestamp: new Date().toISOString(),
-    twitter: !!process.env.TWITTER_BEARER_TOKEN,
+    apify: !!process.env.APIFY_API_TOKEN,
     openai: !!process.env.OPENAI_API_KEY
   });
 });
