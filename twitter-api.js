@@ -20,11 +20,11 @@ export async function fetchTwitterProfile(username) {
     // Configure scraper input
     const input = {
       "handle": cleanUsername,
-      max_tweets: 50,
-      is_retweet: false,
-      add_user_info: true,
-      wait_for_loading: true,
-      max_attempts: 3
+      "max_tweets": 50,
+      "is_retweet": false,
+      "add_user_info": true,
+      "wait_for_loading": true,
+      "max_attempts": 3
     };
 
     console.log('Apify scraper input:', input);
