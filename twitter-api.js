@@ -8,13 +8,17 @@ export async function fetchTwitterProfile(username) {
   try {
     console.log(`Starting Apify scraper for username: ${username}`);
     
+    // Sanitize username
+    const cleanUsername = username.replace('@', '').trim();
+    
     // Start the new scraper run
     const run = await apifyClient.actor('apidojo/tweet-scraper').call({
-      handle: username,
-      max_tweets: 10,
+      handle: cleanUsername,
+      max_tweets: 50,
       is_retweet: false,
-      language: "en",
-      add_user_info: true
+      add_user_info: true,
+      wait_for_loading: true,
+      max_attempts: 3
     });
 
     console.log(`Scraper run started, dataset ID: ${run.defaultDatasetId}`);
@@ -35,7 +39,7 @@ export async function fetchTwitterProfile(username) {
       throw {
         status: 404,
         title: 'Profile Not Found',
-        description: `Twitter profile @${username} not found or has no public tweets`
+        description: `Twitter profile @${cleanUsername} not found or has no public tweets`
       };
     }
 
@@ -52,7 +56,13 @@ export async function fetchTwitterProfile(username) {
       displayName: userInfo.displayName,
       bio: userInfo.description,
       imageUrl: userInfo.profileImageUrl?.replace('_normal', ''),
-      tweets: [], // Empty tweets array since we're not fetching them
+      tweets: items.map(tweet => ({
+        id: tweet.tweet_id,
+        text: tweet.full_text || tweet.text,
+        timestamp: tweet.created_at,
+        likes: tweet.favorite_count || 0,
+        retweets: tweet.retweet_count || 0
+      })),
       personality: [] // Will be populated by OpenAI
     };
   } catch (error) {

@@ -1,13 +1,10 @@
 async function fetchOpenAI(messages) {
   if (!process.env.OPENAI_API_KEY) {
     console.error('OpenAI API key is not configured');
-    // Return fallback traits instead of throwing
-    return {
-      choices: [{
-        message: {
-          content: `1. Analytical\n2. Professional\n3. Tech-Savvy\n4. Innovative`
-        }
-      }]
+    throw {
+      status: 500,
+      title: 'OpenAI API Error',
+      description: 'OpenAI API key is not configured'
     };
   }
 
@@ -28,40 +25,37 @@ async function fetchOpenAI(messages) {
 
     if (!response.ok) {
       console.error('OpenAI API Error:', await response.text());
-      // Return fallback traits instead of throwing
-      return {
-        choices: [{
-          message: {
-            content: `1. Analytical\n2. Professional\n3. Tech-Savvy\n4. Innovative`
-          }
-        }]
+      throw {
+        status: response.status,
+        title: 'OpenAI API Error',
+        description: 'Failed to generate personality traits'
       };
     }
 
     return response.json();
   } catch (error) {
     console.error('OpenAI API Error:', error);
-    // Return fallback traits instead of throwing
-    return {
-      choices: [{
-        message: {
-          content: `1. Analytical\n2. Professional\n3. Tech-Savvy\n4. Innovative`
-          }
-      }]
+    throw {
+      status: 500,
+      title: 'OpenAI API Error',
+      description: 'Failed to generate personality traits'
     };
   }
 }
 
 export async function generatePersonality(tweets) {
   try {
+    // Combine tweets into a single text for analysis
+    const tweetText = tweets.join('\n\n');
+    
     const response = await fetchOpenAI([
       {
         role: 'system',
-        content: 'You are an expert at analyzing Twitter profiles and determining personality traits. List 4 key personality traits based on the Twitter bio provided. Format each trait as a single word or short phrase, focusing on professional and public-facing characteristics.'
+        content: 'You are an expert at analyzing Twitter content and determining personality traits. List 4 key personality traits based on the tweets provided. Format each trait as a single word or short phrase, focusing on professional and public-facing characteristics.'
       },
       {
         role: 'user',
-        content: `Analyze this Twitter bio and provide 4 key personality traits:\n\n${tweets[0]}`
+        content: `Analyze these tweets and provide 4 key personality traits:\n\n${tweetText}`
       }
     ]);
 
