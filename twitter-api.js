@@ -6,21 +6,21 @@ const apifyClient = new ApifyClient({
 
 export async function fetchTwitterProfile(username) {
   try {
-    // Start the scraper run
-    const run = await apifyClient.actor('quacker/twitter-scraper').call({
-      searchTerms: [`from:${username}`],
-      maxItems: 10,
-      addUserInfo: true,
-      proxyConfig: { useApifyProxy: true }
+    // Start the new scraper run
+    const run = await apifyClient.actor('apidojo/tweet-scraper').call({
+      handle: username,
+      max_tweets: 10,
+      is_retweet: false,
+      language: "en"
     });
 
     // Get the results
     const { items } = await apifyClient.dataset(run.defaultDatasetId).listItems();
     
-    // Find the user info from the tweets
-    const userInfo = items.find(item => item.user)?.user;
+    // Get the first tweet to extract user info
+    const firstTweet = items[0];
     
-    if (!userInfo) {
+    if (!firstTweet) {
       throw {
         status: 404,
         title: 'Profile Not Found',
@@ -28,11 +28,19 @@ export async function fetchTwitterProfile(username) {
       };
     }
 
+    // Extract user info from the tweet
+    const userInfo = {
+      username: firstTweet.user_screen_name,
+      displayName: firstTweet.user_name,
+      description: firstTweet.user_description,
+      profileImageUrl: firstTweet.user_profile_image
+    };
+
     return {
       username: userInfo.username,
-      displayName: userInfo.displayName || userInfo.username,
-      bio: userInfo.description || '',
-      imageUrl: userInfo.profileImageUrl,
+      displayName: userInfo.displayName,
+      bio: userInfo.description,
+      imageUrl: userInfo.profileImageUrl?.replace('_normal', ''),
       tweets: [], // Empty tweets array since we're not fetching them
       personality: [] // Will be populated by OpenAI
     };
