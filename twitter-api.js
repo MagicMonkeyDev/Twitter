@@ -101,3 +101,4 @@ export async function fetchTwitterProfile(username) {
       description: error.description || 'Failed to fetch Twitter data. Please try again later.'
     };
   }
+}
