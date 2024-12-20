@@ -7,28 +7,40 @@ const apifyClient = new ApifyClient({
 export async function fetchTwitterProfile(username) {
   try {
     console.log(`Starting Apify scraper for username: ${username}`);
-    
-    // Sanitize username
     const cleanUsername = username.replace('@', '').trim();
+
+    if (!cleanUsername) {
+      throw {
+        status: 400,
+        title: 'Invalid Username',
+        description: 'Please provide a valid Twitter username'
+      };
+    }
     
-    // Start the new scraper run
-    const run = await apifyClient.actor('apidojo/tweet-scraper').call({
-      handle: cleanUsername,
+    // Configure scraper input
+    const input = {
+      "handle": cleanUsername,
       max_tweets: 50,
       is_retweet: false,
       add_user_info: true,
       wait_for_loading: true,
       max_attempts: 3
-    });
+    };
+
+    console.log('Apify scraper input:', input);
+
+    // Start the scraper run
+    const run = await apifyClient.actor('apidojo/tweet-scraper').call(input);
 
     console.log(`Scraper run started, dataset ID: ${run.defaultDatasetId}`);
 
     // Get the results
     const { items } = await apifyClient.dataset(run.defaultDatasetId).listItems();
     
-    console.log(`Scraper results:`, {
+    console.log('Scraper results:', {
       itemsCount: items.length,
-      hasResults: !!items.length
+      hasResults: items.length > 0,
+      firstItem: items[0] ? 'present' : 'missing'
     });
 
     // Get the first tweet to extract user info
@@ -71,8 +83,8 @@ export async function fetchTwitterProfile(username) {
     if (error.message?.includes('Invalid token')) {
       throw {
         status: 401,
-        title: 'Authentication Error',
-        description: 'Invalid Apify API token'
+        title: 'Apify Authentication Error',
+        description: 'Invalid or missing Apify API token'
       };
     }
     
@@ -86,7 +98,6 @@ export async function fetchTwitterProfile(username) {
     throw {
       status: error.status || 500,
       title: 'Twitter Scraper Error',
-      description: error.description || `Failed to fetch Twitter data for @${username}. The profile may be private or suspended.`
+      description: error.description || 'Failed to fetch Twitter data. Please try again later.'
     };
   }
-}
